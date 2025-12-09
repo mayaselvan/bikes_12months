@@ -166,7 +166,6 @@ GROUP BY
 # 4. Remove trips with the ride type of "electric_scooter".
 DELETE FROM cyclistic-24-25.cyclistic_dataset.bikes_12months
 WHERE rideable_type = 'electric_scooter';
--- 144,337 rows have been removed.
 
 
 # 5. Add a 'ride_length_minutes' column to represent the ride duration in minutes, using a NUMERIC data type to preserve any decimal values produced from the calculation.
@@ -178,16 +177,16 @@ SET ride_length_minutes = CAST (TIMESTAMP_DIFF(ended_at, started_at, SECOND) AS 
 WHERE true;
 
 
-# 6. Remove unexpected values under 1 minute in the 'ride_length' or 'ride_length_minutes' fields. Such unusually short ride durations often suggest either an accidental start or a user re-docking the bike to ensure it was secure.
+# 6. Remove unexpected values under 1 minute in the 'ride_length' or 'ride_length_minutes' fields. 
+      # Such unusually short ride durations often suggest either an accidental start or a user re-docking the bike to ensure it was secure.
 DELETE FROM cyclistic-24-25.cyclistic_dataset.bikes_12months
 WHERE ride_length < '00:01:00' OR ride_length_minutes < 1.00;
--- 116,165 rows were removed.
 
 
-# 7. Remove unexpected values over 24 hours in the `ride_length` column and over 1,440 minutes in the `ride_length_minutes` column, as the company considers this to represent a lost or stolen bike - rather than a single legitimate trip.
+# 7. Remove unexpected values over 24 hours in the `ride_length` column and over 1,440 minutes in the `ride_length_minutes` column.
+      # The company considers this to represent a lost or stolen bike - rather than a single legitimate trip.
 DELETE FROM cyclistic-24-25.cyclistic_dataset.bikes_12months
 WHERE ride_length > '23:59:59' OR ride_length_minutes > 1440.00;
--- 6,385 rows were removed.
 
 
 # 8. Calculate the upper and lower bounds using the interquartile range (IQR) method to identify potential outliers in the 'ride_length_minutes' column.
@@ -505,4 +504,3 @@ DROP COLUMN ride_length;
 # 5. Retrieve all records from data, so it can be saved to export to Google Cloud Storage and then imported to Tableau for visualization.
 SELECT *
 FROM cyclistic-24-25.cyclistic_dataset.bikes_12months;
-
