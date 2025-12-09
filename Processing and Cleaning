@@ -1,0 +1,128 @@
+/* Step 3: Process */
+
+# PRE-CLEANING
+
+# 1. Remove invalid values in 'ride_length' column of '202411' table.
+
+-- a. Sort 'ride_length' column to view unexpected values
+SELECT *
+FROM cyclistic-24-25.cyclistic_dataset.202411
+ORDER BY ride_length ASC;
+-- Returns 43 records with invalid ##### values
+
+-- b. Verify that invalid values are due to the start time being after end time
+SELECT * 
+FROM cyclistic-24-25.cyclistic_dataset.202411
+WHERE started_at > ended_at;
+-- 43 values with the start time > end time - all of which have ##### values in the 'ride_length' column.
+
+-- c. Remove invalid 'ride_length' records in the '202411' table.
+DELETE FROM cyclistic-24-25.cyclistic_dataset.202411
+WHERE started_at > ended_at;
+-- 43 rows removed
+
+
+# 2. Cast data type in '202411' table as TIME (rather than STRING)
+
+-- a. Add temporary column with the correct TIME data type
+ALTER TABLE cyclistic-24-25.cyclistic_dataset.202411
+ADD COLUMN ride_length_time TIME;
+
+-- b. Cast values from original STRING data type column to new TIME data type column
+UPDATE cyclistic-24-25.cyclistic_dataset.202411
+SET ride_length_time = CAST(ride_length AS TIME)
+WHERE TRUE;
+
+-- c. Delete original STRING data type column
+ALTER TABLE cyclistic-24-25.cyclistic_dataset.202411
+DROP COLUMN ride_length;
+
+-- d. Rename the new TIME data type column to the original 'ride_length' column name
+ALTER TABLE cyclistic-24-25.cyclistic_dataset.202411
+RENAME COLUMN ride_length_time TO ride_length;
+
+
+# 3. Ensure column order of '202411' table is consistent to match the other tables, and then merge all 12 tables into 1 table
+-- a. Create new table with correct column order
+CREATE TABLE IF NOT EXISTS cyclistic-24-25.cyclistic_dataset.202411_1 AS
+SELECT 
+      ride_id, 
+      rideable_type, 
+      started_at,
+      ended_at,
+      ride_length,
+      day_of_week,
+      start_station_name,
+      start_station_id, 
+      end_station_name,
+      end_station_id,
+      start_lat,
+      start_lng,
+      end_lat,
+      end_lng,
+      member_casual
+FROM cyclistic-24-25.cyclistic_dataset.202411;
+
+-- b. Remove original '202411' table
+DROP TABLE cyclistic-24-25.cyclistic_dataset.202411;
+
+-- c. Merge all 12 files into 1 table
+CREATE TABLE IF NOT EXISTS cyclistic-24-25.cyclistic_dataset.bikes_12months AS 
+      SELECT *
+      FROM cyclistic-24-25.cyclistic_dataset.202406
+      UNION ALL
+      SELECT *
+      FROM cyclistic-24-25.cyclistic_dataset.202407
+      UNION ALL
+      SELECT *
+      FROM cyclistic-24-25.cyclistic_dataset.202408
+      UNION ALL
+      SELECT *
+      FROM cyclistic-24-25.cyclistic_dataset.202409
+      UNION ALL
+      SELECT *
+      FROM cyclistic-24-25.cyclistic_dataset.202410
+      UNION ALL
+      SELECT *
+      FROM cyclistic-24-25.cyclistic_dataset.202411_1
+      UNION ALL
+      SELECT *
+      FROM cyclistic-24-25.cyclistic_dataset.202412
+      UNION ALL
+      SELECT *
+      FROM cyclistic-24-25.cyclistic_dataset.202501
+      UNION ALL
+      SELECT *
+      FROM cyclistic-24-25.cyclistic_dataset.202502
+      UNION ALL
+      SELECT *
+      FROM cyclistic-24-25.cyclistic_dataset.202503
+      UNION ALL
+      SELECT *
+      FROM cyclistic-24-25.cyclistic_dataset.202504
+      UNION ALL
+      SELECT *
+      FROM cyclistic-24-25.cyclistic_dataset.202505;
+
+
+# 5. Verify that the total number of rows matches the merged table’s row count of 5,628,804.
+SELECT 
+      (SELECT COUNT(*) FROM cyclistic-24-25.cyclistic_dataset.202406) 
+      + (SELECT COUNT(*) FROM cyclistic-24-25.cyclistic_dataset.202407) 
+      + (SELECT COUNT(*) FROM cyclistic-24-25.cyclistic_dataset.202408) 
+      + (SELECT COUNT(*) FROM cyclistic-24-25.cyclistic_dataset.202409) 
+      + (SELECT COUNT(*) FROM cyclistic-24-25.cyclistic_dataset.202410) 
+      + (SELECT COUNT(*) FROM cyclistic-24-25.cyclistic_dataset.202411_1) 
+      + (SELECT COUNT(*) FROM cyclistic-24-25.cyclistic_dataset.202412) 
+      + (SELECT COUNT(*) FROM cyclistic-24-25.cyclistic_dataset.202501) 
+      + (SELECT COUNT(*) FROM cyclistic-24-25.cyclistic_dataset.202502) 
+      + (SELECT COUNT(*) FROM cyclistic-24-25.cyclistic_dataset.202503) 
+      + (SELECT COUNT(*) FROM cyclistic-24-25.cyclistic_dataset.202504) 
+      + (SELECT COUNT(*) FROM cyclistic-24-25.cyclistic_dataset.202505); 
+
+SELECT COUNT(*) FROM cyclistic-24-25.cyclistic_dataset.bikes_12months;
+
+
+# 6. Create backup copy of merged table
+CREATE TABLE IF NOT EXISTS cyclistic-24-25.cyclistic_dataset.copy_bikes_12months
+CLONE cyclistic-24-25.cyclistic_dataset.bikes_12months;
