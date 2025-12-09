@@ -13,11 +13,89 @@ GROUP BY
 
 
 ##### Ride Frequency by Month (Seasonality) #####
+SELECT 
+  FORMAT_DATE('%B', start_date) AS month_name,
+  EXTRACT(MONTH FROM start_date) AS month_number,
+  member_casual,
+  COUNT(*) AS ride_count
+FROM cyclistic-24-25.cyclistic_dataset.bikes_12months
+GROUP BY
+  month_name,
+  month_number,
+  member_casual
+ORDER BY
+  month_number,
+  member_casual;
+
+
+
+##### Ride Duration Analysis #####
+
+## Overall Ride Length Distribution
+-- Calculate average, max, and min ride length.
 SELECT
       member_casual,
-      COUNT(*) AS total_trips,
-      COUNT(*) * 100 / SUM(COUNT(*)) OVER () AS percent_of_total
+      MAX(ride_length_minutes) AS max_ride_length,
+      MIN(ride_length_minutes) AS min_ride_length,
+      AVG(ride_length_minutes) AS average_ride_length
 FROM 
       cyclistic-24-25.cyclistic_dataset.bikes_12months
 GROUP BY 
       member_casual;
+
+## Calculate median ride length
+SELECT
+      DISTINCT member_casual,
+      PERCENTILE_CONT(ride_length_minutes, 0.5) OVER (PARTITION BY member_casual) AS median_ride_length
+FROM 
+      cyclistic-24-25.cyclistic_dataset.bikes_12months
+ORDER BY member_casual DESC;
+
+## Calculate mode ride length
+SELECT
+  member_casual,
+  ride_length_minutes AS mode_ride_length
+FROM
+  (
+    SELECT
+      ride_length_minutes,
+      member_casual,
+      RANK() OVER (PARTITION BY member_casual ORDER BY Count DESC) AS rank
+    FROM
+      (
+        SELECT ride_length_minutes, member_casual, COUNT(*) AS Count
+        FROM cyclistic-24-25.cyclistic_dataset.bikes_12months 
+        GROUP BY ride_length_minutes, member_casual
+      ) AS counts
+  )
+WHERE
+  rank = 1;
+
+
+
+###### Median Ride Length by Day of the Week #####
+
+SELECT 
+      DISTINCT day_of_week,
+      member_casual,
+      median_ride_length
+FROM (
+      SELECT
+            day_of_week,
+            member_casual,
+            PERCENTILE_CONT(ride_length_minutes, 0.5) OVER (PARTITION BY day_of_week, member_casual) AS median_ride_length
+      FROM cyclistic-24-25.cyclistic_dataset.bikes_12months
+)
+ORDER BY 
+      CASE
+            WHEN day_of_week = 'Sunday' THEN 1
+            WHEN day_of_week = 'Monday' THEN 2
+            WHEN day_of_week = 'Tuesday' THEN 3
+            WHEN day_of_week = 'Wednesday' THEN 4
+            WHEN day_of_week = 'Thursday' THEN 5
+            WHEN day_of_week = 'Friday' THEN 6
+            WHEN day_of_week = 'Saturday' THEN 7
+      END,
+      member_casual;
+
+
