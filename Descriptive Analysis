@@ -1,7 +1,8 @@
-/* Step 4: Analyze
+/* Step 4: Process */
 
 
-##### Total Trips by User Type #####
+##### TOTAL TRIPS BY USER TYPE #####
+
 SELECT
       member_casual,
       COUNT(*) AS total_trips,
@@ -12,7 +13,8 @@ GROUP BY
       member_casual;
 
 
-##### Ride Frequency by Month (Seasonality) #####
+##### RIDE FREQUENCY BY MONTH (SEASONALITY) #####
+
 SELECT 
   FORMAT_DATE('%B', start_date) AS month_name,
   EXTRACT(MONTH FROM start_date) AS month_number,
@@ -29,9 +31,10 @@ ORDER BY
 
 
 
-##### Ride Duration Analysis #####
+##### RIDE DURATION ANALYSIS #####
 
 ## Overall Ride Length Distribution
+
 -- Calculate average, max, and min ride length.
 SELECT
       member_casual,
@@ -43,7 +46,8 @@ FROM
 GROUP BY 
       member_casual;
 
-## Calculate median ride length
+-- Calculate median ride length
+
 SELECT
       DISTINCT member_casual,
       PERCENTILE_CONT(ride_length_minutes, 0.5) OVER (PARTITION BY member_casual) AS median_ride_length
@@ -51,7 +55,7 @@ FROM
       cyclistic-24-25.cyclistic_dataset.bikes_12months
 ORDER BY member_casual DESC;
 
-## Calculate mode ride length
+-- Calculate mode ride length
 SELECT
   member_casual,
   ride_length_minutes AS mode_ride_length
@@ -73,7 +77,7 @@ WHERE
 
 
 
-###### Median Ride Length by Day of the Week #####
+###### MEDIAN RIDE LENGTH BY DAY OF WEEK #####
 
 SELECT 
       DISTINCT day_of_week,
