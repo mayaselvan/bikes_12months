@@ -240,7 +240,9 @@ ORDER BY
 -- The query results show the values 1, 2, 3, 4, 5, 6, and 7 - which is accurate as each number signifies the corresponding numerical day of the week.
 
 
-# 11. Identify 'start_station_id's associated with more than one 'start_station_name'.
+# 11. 
+
+-- a. Identify `start_station_id`'s associated with more than one 'start_station_name'.
 SELECT
   start_station_id,
   start_station_name,
@@ -251,6 +253,15 @@ QUALIFY COUNT(DISTINCT start_station_name) OVER (PARTITION BY start_station_id) 
 ORDER BY start_station_id, name_count DESC;
 -- This query returns 401,822 records. After examining the records, it appears that some of the duplicates are due to misspellings or stray characters. However, I will leave these station names unchanged except for correcting these errors, as doing so could remove valid information.
 
+-- b. Identify 'end_station_id''s associated with more than one 'end_station_name'.
+SELECT
+  end_station_id,
+  end_station_name,
+  COUNT(*) AS name_count
+FROM cyclistic-24-25.cyclistic_dataset.bikes_12months
+GROUP BY end_station_id, end_station_name
+QUALIFY COUNT(DISTINCT end_station_name) OVER (PARTITION BY end_station_id) > 1
+ORDER BY end_station_id, name_count DESC;
 
 # 12. Remove trailing asterisk in 'start_station_name' field.
 UPDATE cyclistic-24-25.cyclistic_dataset.bikes_12months
