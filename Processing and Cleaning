@@ -184,7 +184,7 @@ DELETE FROM cyclistic-24-25.cyclistic_dataset.bikes_12months
 WHERE ride_length < '00:01:00' OR ride_length_minutes < 1.00;
 
 
-# 7. Remove unexpected values over 24 hours in the `ride_length` column and over 1,440 minutes in the `ride_length_minutes` column.
+# 7. Remove unexpected values over 24 hours in the `ride_length` or `ride_length_minutes` columns.
       # The company considers this to represent a lost or stolen bike - rather than a single legitimate trip.
 DELETE FROM cyclistic-24-25.cyclistic_dataset.bikes_12months
 WHERE ride_length > '23:59:59' OR ride_length_minutes > 1440.00;
@@ -240,7 +240,7 @@ ORDER BY
 -- The query results show the values 1, 2, 3, 4, 5, 6, and 7 - which is accurate as each number signifies the corresponding numerical day of the week.
 
 
-# 11. 
+# 11. Check for station ID's which are mapped to more than one station name.
 
 -- a. Identify `start_station_id`'s associated with more than one 'start_station_name'.
 SELECT
@@ -251,7 +251,6 @@ FROM cyclistic-24-25.cyclistic_dataset.bikes_12months
 GROUP BY start_station_id, start_station_name
 QUALIFY COUNT(DISTINCT start_station_name) OVER (PARTITION BY start_station_id) > 1
 ORDER BY start_station_id, name_count DESC;
--- This query returns 401,822 records. After examining the records, it appears that some of the duplicates are due to misspellings or stray characters. However, I will leave these station names unchanged except for correcting these errors, as doing so could remove valid information.
 
 -- b. Identify 'end_station_id''s associated with more than one 'end_station_name'.
 SELECT
@@ -263,19 +262,23 @@ GROUP BY end_station_id, end_station_name
 QUALIFY COUNT(DISTINCT end_station_name) OVER (PARTITION BY end_station_id) > 1
 ORDER BY end_station_id, name_count DESC;
 
-# 12. Remove trailing asterisk in 'start_station_name' field.
+-- After examining the records, it appears that some of the duplicates are due to misspellings or stray characters. 
+-- However, I will leave these station names unchanged except for correcting these errors, as doing so could remove valid information.
+
+
+# 12. Clean and standardize start and end station names by removing trailing asterisks, replacing "and" with "&", correcting misspellings and formatting issues.
+
+-- a. Remove trailing asterisk in 'start_station_name' field.
 UPDATE cyclistic-24-25.cyclistic_dataset.bikes_12months
 SET start_station_name = TRIM(start_station_name, '*')
 WHERE start_station_name LIKE '%*';
 
-
-#13. Change "and" to "&" for any 'start_station_name' values.
+-- b. Change "and" to "&" for any 'start_station_name' values.
 UPDATE cyclistic-24-25.cyclistic_dataset.bikes_12months
 SET start_station_name = REPLACE(start_station_name, ' and ', ' & ')
 WHERE start_station_name LIKE '% and %';
 
-
-#14. Standardize the 'start_station_name' entries with misspellings, incorrect street suffixes, or extra characters.
+-- c. Standardize the 'start_station_name' entries with misspellings, incorrect street suffixes, or extra characters.
 UPDATE cyclistic-24-25.cyclistic_dataset.bikes_12months
 SET start_station_name = CASE
     WHEN start_station_name = 'Lowell Ave & Armitage' THEN 'Lowell Ave & Armitage Ave'
@@ -299,31 +302,17 @@ WHERE start_station_name IN (
       'Franklin St & Adams St (Temp)'
 );
 
-
-# 15. Identify 'end_station_id''s associated with more than one 'end_station_name'.
-SELECT
-  end_station_id,
-  end_station_name,
-  COUNT(*) AS name_count
-FROM cyclistic-24-25.cyclistic_dataset.bikes_12months
-GROUP BY end_station_id, end_station_name
-QUALIFY COUNT(DISTINCT end_station_name) OVER (PARTITION BY end_station_id) > 1
-ORDER BY end_station_id, name_count DESC;
-
-
-# 16. Remove trailing asterisk in 'end_station_name' field.
+-- d. Remove trailing asterisk in 'end_station_name' field.
 UPDATE cyclistic-24-25.cyclistic_dataset.bikes_12months
 SET end_station_name = TRIM(end_station_name, '*')
 WHERE end_station_name LIKE '%*';
 
-
-#17. Change "and" to "&" for any 'end_station_name' values.
+-- e. Change "and" to "&" for any 'end_station_name' values.
 UPDATE cyclistic-24-25.cyclistic_dataset.bikes_12months
 SET end_station_name = REPLACE(start_station_name, ' and ', ' & ')
 WHERE end_station_name LIKE '% and %';
 
-
-#18. Standardize the `end_station_name` entries with misspellings or extra characters.
+-- f. Standardize the `end_station_name` entries with misspellings or extra characters.
 UPDATE cyclistic-24-25.cyclistic_dataset.bikes_12months
 SET end_station_name = CASE
     WHEN end_station_name = 'Lowell Ave & Armitage' THEN 'Lowell Ave & Armitage Ave'
@@ -341,16 +330,16 @@ WHERE start_station_name IN (
       'Kedzie Ave & 38th Pl'
 );
 
+# I chose not to modify cases where multiple station IDs are associated with the same station name, since station IDs are not the focus of the analysis.
 
-# 19. Remove records with 'end_station_id' of "Hubbard Bike-checking (LBS-WH-TEST)", as this seems to represent a test/service trip since it does not match the typical numeric or alphanumeric values for the station ID.
+
+# 13. Remove records with 'end_station_id' of "Hubbard Bike-checking (LBS-WH-TEST)", as this seems to represent a test/service trip since it does not match the typical numeric or alphanumeric values for the station ID.
 DELETE FROM cyclistic-24-25.cyclistic_dataset.bikes_12months
 WHERE end_station_id = "Hubbard Bike-checking (LBS-WH-TEST)";
 
 
-# I chose not to modify cases where multiple station IDs are associated with the same station name, since station IDs are not the focus of the analysis.
+# 14. Check for unexpected values in the 'member_casual' column.
 
-
-# 20. Check for unexpected values in the 'member_casual' column.
 SELECT
       DISTINCT(member_casual)
 FROM 
@@ -358,7 +347,8 @@ FROM
 -- The query results show that there are only 2 distinct values of "member" and "casual".
 
 
-# 21. Remove any records with invalid latitude and longitude values.
+# 15. Remove any records with invalid latitude and longitude values.
+
 DELETE FROM cyclistic-24-25.cyclistic_dataset.bikes_12months
 WHERE start_lat NOT BETWEEN -90 AND 90
    OR start_lng NOT BETWEEN -180 AND 180
