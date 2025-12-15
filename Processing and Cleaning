@@ -43,6 +43,7 @@ RENAME COLUMN ride_length_time TO ride_length;
 
 
 # 3. Ensure column order of '202411' table is consistent to match the other tables, and then merge all 12 tables into 1 table.
+
 -- a. Create new table with correct column order
 CREATE TABLE IF NOT EXISTS cyclistic-24-25.cyclistic_dataset.202411_1 AS
 SELECT 
