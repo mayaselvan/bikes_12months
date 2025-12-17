@@ -1,7 +1,7 @@
 /* Step 4: Process */
 
 
-##### TOTAL TRIPS BY USER TYPE #####
+##### TOTAL TRIPS BY RIDER TYPE #####
 
 SELECT
       member_casual,
@@ -47,7 +47,6 @@ GROUP BY
       member_casual;
 
 -- Calculate median ride length
-
 SELECT
       DISTINCT member_casual,
       PERCENTILE_CONT(ride_length_minutes, 0.5) OVER (PARTITION BY member_casual) AS median_ride_length
@@ -77,7 +76,7 @@ WHERE
 
 
 
-###### MEDIAN RIDE LENGTH BY DAY OF WEEK #####
+## Median Ride Length by Day of Week
 
 SELECT 
       DISTINCT day_of_week,
@@ -103,3 +102,76 @@ ORDER BY
       member_casual;
 
 
+##### USAGE PATTERNS BY TIME AND DAY #####
+
+## Ride Frequency by Day of Week
+SELECT 
+      DISTINCT day_of_week,
+      member_casual,
+      COUNT(*) AS ride_count
+FROM cyclistic-24-25.cyclistic_dataset.bikes_12months
+GROUP BY 
+      day_of_week,
+      member_casual
+ORDER BY 
+      CASE
+            WHEN day_of_week = 'Sunday' THEN 1
+            WHEN day_of_week = 'Monday' THEN 2
+            WHEN day_of_week = 'Tuesday' THEN 3
+            WHEN day_of_week = 'Wednesday' THEN 4
+            WHEN day_of_week = 'Thursday' THEN 5
+            WHEN day_of_week = 'Friday' THEN 6
+            WHEN day_of_week = 'Saturday' THEN 7
+      END,
+      member_casual;
+
+
+## Ride Frequency by Time of Day
+
+SELECT
+  FORMAT_TIME('%I %p', start_time) AS start_hour_label,
+  EXTRACT(HOUR FROM start_time) AS start_hour_number,
+  member_casual,
+  COUNT(*) AS ride_count
+FROM
+  `cyclistic-24-25.cyclistic_dataset.bikes_12months`
+GROUP BY
+  start_hour_label,
+  start_hour_number,
+  member_casual
+ORDER BY
+  start_hour_number,
+  member_casual;
+
+
+##### SPATIAL ANALYSIS #####
+
+-- Identify most popular stations for members
+SELECT 
+      DISTINCT start_station_name, 
+      member_casual,
+      COUNT(*) AS ride_count
+FROM cyclistic-24-25.cyclistic_dataset.bikes_12months
+WHERE 
+      start_station_name != 'No station' AND
+      member_casual = 'member'
+GROUP BY 
+      start_station_name,
+      member_casual
+ORDER BY ride_count DESC
+LIMIT 10;
+
+-- Identify most popular stations for casual users
+SELECT 
+      DISTINCT start_station_name, 
+      member_casual,
+      COUNT(*) AS ride_count
+FROM cyclistic-24-25.cyclistic_dataset.bikes_12months
+WHERE 
+      start_station_name != 'No station' AND
+      member_casual = 'casual'
+GROUP BY 
+      start_station_name,
+      member_casual
+ORDER BY ride_count DESC
+LIMIT 10;
